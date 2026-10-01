@@ -1,0 +1,37 @@
+# Verilator / simulation build output
+/.build/
+build/
+obj_dir/
+*.vcd
+*.fst
+*.pcap
+*.pcapng
+
+# Vivado / xsim
+xsim.dir/
+*.jou
+*.log
+*.pb
+*.str
+*.wdb
+webtalk*
+.Xil/
+vivado*.backup.jou
+vivado*.backup.log
+
+# Vivado project output
+*.cache/
+*.hw/
+*.ip_user_files/
+*.runs/
+*.sim/
+*.gen/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+.vscode/
+TODO.md
