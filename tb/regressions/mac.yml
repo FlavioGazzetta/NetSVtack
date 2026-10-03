@@ -1,0 +1,3 @@
+name: mac
+sanity: ./tb/verilator/mac/mac_test.sh
+nightly: ./tb/verilator/mac/mac_test.sh :sweep :random_seeds=10
