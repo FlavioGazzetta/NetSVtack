@@ -1,0 +1,3 @@
+name: top
+sanity: ./tb/verilator/top/top_test.sh
+nightly: ./tb/verilator/top/top_test.sh :sweep :random_seeds=10
