@@ -44,6 +44,7 @@ module netsvtack (
 
   localparam logic [15:0] ETHERTYPE_IPV4 = 16'h0800;
   localparam logic [15:0] ETHERTYPE_ARP = 16'h0806;
+  localparam logic [7:0] PROTOCOL_ICMP = 8'd1;
   localparam logic [7:0] PROTOCOL_TCP = 8'd6;
   localparam logic [7:0] PROTOCOL_UDP = 8'd17;
 
@@ -63,6 +64,7 @@ module netsvtack (
 
   logic [31:0] irx_src_ip; // ipv4_rx -> udp_rx, tcp_rx
   logic [15:0] irx_len;
+  logic irx_icmp;
   logic irx_udp;
   logic irx_tcp;
   logic [63:0] irx_tdata;
@@ -106,7 +108,26 @@ module netsvtack (
   logic ttx_tlast;
   logic ttx_tuser;
 
-  logic [31:0] pmux_dst_ip; // ip mux -> ipv4_tx
+  logic [31:0] ctx_dst_ip; // icmp -> icmp mux
+  logic [15:0] ctx_len;
+  logic [63:0] ctx_tdata;
+  logic [7:0] ctx_tkeep;
+  logic ctx_tvalid;
+  logic ctx_tready;
+  logic ctx_tlast;
+  logic ctx_tuser;
+
+  logic [31:0] qmux_dst_ip; // ip mux -> icmp mux
+  logic [7:0] qmux_protocol;
+  logic [15:0] qmux_len;
+  logic [63:0] qmux_tdata;
+  logic [7:0] qmux_tkeep;
+  logic qmux_tvalid;
+  logic qmux_tready;
+  logic qmux_tlast;
+  logic qmux_tuser;
+
+  logic [31:0] pmux_dst_ip; // icmp mux -> ipv4_tx
   logic [7:0] pmux_protocol;
   logic [15:0] pmux_len;
   logic [63:0] pmux_tdata;
@@ -239,6 +260,7 @@ module netsvtack (
     .s_tuser(erx_tuser),
     .m_src_ip(irx_src_ip),
     .m_len(irx_len),
+    .m_icmp(irx_icmp),
     .m_udp(irx_udp),
     .m_tcp(irx_tcp),
     .m_tdata(irx_tdata),
@@ -269,9 +291,30 @@ module netsvtack (
     .m_tuser(udp_rx_tuser)
   );
 
+  icmp u_icmp (
+    .clk(clk),
+    .rst_n(rst_n),
+    .s_src_ip(irx_src_ip),
+    .s_len(irx_len),
+    .s_tdata(irx_tdata),
+    .s_tkeep(irx_tkeep),
+    .s_tvalid(irx_tvalid && irx_icmp),
+    .s_tlast(irx_tlast),
+    .s_tuser(irx_tuser),
+    .m_dst_ip(ctx_dst_ip),
+    .m_len(ctx_len),
+    .m_tdata(ctx_tdata),
+    .m_tkeep(ctx_tkeep),
+    .m_tvalid(ctx_tvalid),
+    .m_tready(ctx_tready),
+    .m_tlast(ctx_tlast),
+    .m_tuser(ctx_tuser)
+  );
+
   tcp_rx u_tcp_rx ( // the data stream waits for the receive buffer
     .clk(clk),
     .rst_n(rst_n),
+    .cfg_ip(cfg_ip),
     .s_src_ip(irx_src_ip),
     .s_len(irx_len),
     .s_tdata(irx_tdata),
@@ -392,6 +435,32 @@ module netsvtack (
     .s1_tready(utx_tready),
     .s1_tlast(utx_tlast),
     .s1_tuser(utx_tuser),
+    .m_meta({qmux_dst_ip, qmux_protocol, qmux_len}),
+    .m_tdata(qmux_tdata),
+    .m_tkeep(qmux_tkeep),
+    .m_tvalid(qmux_tvalid),
+    .m_tready(qmux_tready),
+    .m_tlast(qmux_tlast),
+    .m_tuser(qmux_tuser)
+  );
+
+  frame_mux #(.META(56)) u_icmp_mux ( // echo replies go last
+    .clk(clk),
+    .rst_n(rst_n),
+    .s0_meta({qmux_dst_ip, qmux_protocol, qmux_len}),
+    .s0_tdata(qmux_tdata),
+    .s0_tkeep(qmux_tkeep),
+    .s0_tvalid(qmux_tvalid),
+    .s0_tready(qmux_tready),
+    .s0_tlast(qmux_tlast),
+    .s0_tuser(qmux_tuser),
+    .s1_meta({ctx_dst_ip, PROTOCOL_ICMP, ctx_len}),
+    .s1_tdata(ctx_tdata),
+    .s1_tkeep(ctx_tkeep),
+    .s1_tvalid(ctx_tvalid),
+    .s1_tready(ctx_tready),
+    .s1_tlast(ctx_tlast),
+    .s1_tuser(ctx_tuser),
     .m_meta({pmux_dst_ip, pmux_protocol, pmux_len}),
     .m_tdata(pmux_tdata),
     .m_tkeep(pmux_tkeep),

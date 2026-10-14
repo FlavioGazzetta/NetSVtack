@@ -33,8 +33,8 @@ static inline uint64_t mac_value(const Mac &m){
 
 static inline uint16_t ip_checksum(const uint8_t *p, size_t n){
     uint32_t sum = 0;
-    for (size_t i = 0; i + 1 < n; i += 2){
-        sum += (p[i] << 8) | p[i + 1];
+    for (size_t i = 0; i < n; i += 2){
+        sum += (p[i] << 8) | (i + 1 < n ? p[i + 1] : 0);
     }
     while (sum >> 16){
         sum = (sum & 0xFFFF) + (sum >> 16);
@@ -90,6 +90,20 @@ static inline Bytes udp_packet(uint16_t src_port, uint16_t dst_port, const Bytes
     put16(p, 8 + data.size());
     put16(p, 0);
     p.insert(p.end(), data.begin(), data.end());
+    return p;
+}
+
+static inline Bytes icmp_echo(uint8_t type, uint16_t id, uint16_t seq, const Bytes &data){
+    Bytes p;
+    p.push_back(type);
+    p.push_back(0);
+    put16(p, 0);
+    put16(p, id);
+    put16(p, seq);
+    p.insert(p.end(), data.begin(), data.end());
+    uint16_t c = ip_checksum(p.data(), p.size());
+    p[2] = c >> 8;
+    p[3] = c & 0xFF;
     return p;
 }
 

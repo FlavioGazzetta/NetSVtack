@@ -13,7 +13,8 @@ module ipv4_rx (
 
   output logic [31:0] m_src_ip, // held through the packet
   output logic [15:0] m_len, // bytes of payload
-  output logic m_udp, // protocol of the packet
+  output logic m_icmp, // protocol of the packet
+  output logic m_udp,
   output logic m_tcp,
   output logic [63:0] m_tdata, // the payload without the Ethernet padding
   output logic [7:0] m_tkeep,
@@ -23,6 +24,7 @@ module ipv4_rx (
 
 );
 
+  localparam logic [7:0] PROTOCOL_ICMP = 8'd1;
   localparam logic [7:0] PROTOCOL_TCP = 8'd6;
   localparam logic [7:0] PROTOCOL_UDP = 8'd17;
 
@@ -111,6 +113,7 @@ module ipv4_rx (
       accept <= 1'b0;
       m_src_ip <= '0;
       m_len <= '0;
+      m_icmp <= 1'b0;
       m_udp <= 1'b0;
       m_tcp <= 1'b0;
     end else begin
@@ -119,6 +122,7 @@ module ipv4_rx (
                   && total_len >= 16'd20 && dst_ip == cfg_ip;
         m_src_ip <= src_ip;
         m_len <= total_len - 16'd20;
+        m_icmp <= protocol == PROTOCOL_ICMP;
         m_udp <= protocol == PROTOCOL_UDP;
         m_tcp <= protocol == PROTOCOL_TCP;
       end

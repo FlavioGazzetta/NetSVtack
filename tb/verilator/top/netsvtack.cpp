@@ -54,6 +54,7 @@ static int n_udp_rx_bad = 0;
 static int n_udp_tx = 0;
 static int n_arp_tx = 0;
 static int n_dropped = 0;
+static int n_ping = 0;
 static uint64_t rx_first_min = ~0ull, rx_first_max = 0;
 static uint64_t rx_last_min = ~0ull, rx_last_max = 0;
 static uint64_t tx_min = ~0ull, tx_max = 0;
@@ -374,6 +375,38 @@ static void op_udp_tx(uint32_t ip){
     }
 }
 
+// a host pings the stack. The reply is the request with the type changed and
+// the checksum moved by the same amount
+static void op_ping(int h){
+    settle();
+    int r = rng() % 10;
+    uint8_t type = r == 0 ? 13 : 8;
+    Bytes req = icmp_echo(type, (uint16_t)rng(), (uint16_t)rng(), random_bytes(random_len()));
+    Bytes f = eth_frame(STACK_MAC, host_mac(h), 0x0800, ipv4_packet(host_ip(h), STACK_IP, 1, (uint16_t)rng(), 64, 0, req));
+    if (r != 1){
+        pcap->write(sim->cycle, padded(f));
+    }
+    send_frame(f, r != 1, 8);
+    if (r > 1 && cache.count(host_ip(h)) != 0){
+        Bytes rep = req;
+        uint32_t c = ((rep[2] << 8) | rep[3]) + 0x0800;
+        c = (c & 0xFFFF) + (c >> 16);
+        rep[0] = 0;
+        rep[2] = c >> 8;
+        rep[3] = c & 0xFF;
+        if (ip_checksum(rep.data(), rep.size()) != 0){
+            fail("the model's echo reply has a bad checksum");
+        }
+        exp_ip_tx.push_back(eth_frame(host_mac(h), STACK_MAC, 0x0800, ipv4_packet(STACK_IP, host_ip(h), 1, ip_id++, 64, 0x4000, rep)));
+        n_ping++;
+    }
+    else if (r > 1){
+        exp_arp_tx.push_back(eth_frame(MAC_BROADCAST, STACK_MAC, 0x0806, arp_packet(1, STACK_MAC, STACK_IP, Mac{}, host_ip(h))));
+        n_dropped++;
+    }
+    settle();
+}
+
 int main(int argc, char **argv, char **env){
     Verilated::commandArgs(argc, argv);
     Sim<Vtop> s;
@@ -405,6 +438,9 @@ int main(int argc, char **argv, char **env){
         else if (r < 5){
             op_arp_reply(rng() % (HOSTS + 1));
         }
+        else if (r < 10){
+            op_ping(rng() % (HOSTS + 1));
+        }
         else if (r < 55){
             op_udp_rx();
         }
@@ -423,7 +459,7 @@ int main(int argc, char **argv, char **env){
         VL_PRINTF("FAIL: still waiting for %zu datagrams in, %zu ARP frames out, %zu IPv4 frames out\n", exp_udp_rx.size(), exp_arp_tx.size(), exp_ip_tx.size());
         failures++;
     }
-    bool covered = n_udp_tx > 0 && n_arp_tx > 0 && n_dropped > 0;
+    bool covered = n_udp_tx > 0 && n_arp_tx > 0 && n_dropped > 0 && n_ping > 0;
     for (int i = 0; i < RX_NKIND; i++){
         covered = covered && rx_kinds[i] > 0;
     }
@@ -433,8 +469,8 @@ int main(int argc, char **argv, char **env){
     }
 
     if (failures == 0){
-        VL_PRINTF("PASS: all netsvtack tests passed (%d datagrams in, %d out, %d ARP frames out, %d dropped for no MAC, %d dropped with tuser)\n",
-                  n_udp_rx, n_udp_tx, n_arp_tx, n_dropped, n_udp_rx_bad);
+        VL_PRINTF("PASS: all netsvtack tests passed (%d datagrams in, %d out, %d pings answered, %d ARP frames out, %d dropped for no MAC, %d dropped with tuser)\n",
+                  n_udp_rx, n_udp_tx - n_ping, n_ping, n_arp_tx, n_dropped, n_udp_rx_bad);
         VL_PRINTF("  clocks in: start of frame to first word %lu..%lu, end of frame to tlast %lu..%lu. out: first word to start of frame %lu..%lu\n",
                   (unsigned long)rx_first_min, (unsigned long)rx_first_max, (unsigned long)rx_last_min, (unsigned long)rx_last_max,
                   (unsigned long)tx_min, (unsigned long)tx_max);
