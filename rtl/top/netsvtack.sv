@@ -1,4 +1,6 @@
-module netsvtack (
+module netsvtack #(
+  parameter int TCP_RTO = 31_250_000 // clocks before unanswered TCP data is sent again
+)(
 
   input logic clk, // 156.25 MHz
   input logic rst_n,
@@ -34,6 +36,16 @@ module netsvtack (
   output logic udp_tx_tready,
   input logic udp_tx_tlast,
   input logic udp_tx_tuser,
+
+  output logic [63:0] tcp_rx_tdata, // the bytes of the connection, in order
+  output logic [7:0] tcp_rx_tkeep, // a word can have less than 8 bytes
+  output logic tcp_rx_tvalid,
+  input logic tcp_rx_tready,
+
+  input logic [63:0] tcp_tx_tdata,
+  input logic [7:0] tcp_tx_tkeep, // any number of bytes, from byte 0 up
+  input logic tcp_tx_tvalid,
+  output logic tcp_tx_tready, // low when there is no connection
 
   output logic tcp_connected,
 
@@ -170,6 +182,23 @@ module netsvtack (
   logic [7:0] seg_flags;
   logic [15:0] seg_window;
   logic [15:0] seg_len;
+
+  logic [63:0] trx_tdata; // tcp_rx -> tcp_rx_buf
+  logic [7:0] trx_tkeep;
+  logic trx_tvalid;
+  logic trx_tlast;
+  logic trx_tuser;
+  logic rx_commit; // tcp_ctrl -> tcp_rx_buf
+  logic rx_rollback;
+  logic rx_over;
+  logic [15:0] rx_space;
+
+  logic tbuf_init; // tcp_ctrl -> tcp_tx_buf
+  logic [31:0] tbuf_init_seq;
+  logic [31:0] tbuf_wr_seq;
+  logic [31:0] tbuf_acked;
+  logic [31:0] tbuf_rd_seq; // tcp_tx -> tcp_tx_buf
+  logic [63:0] tbuf_rd_data;
 
   logic tseg_valid; // tcp_ctrl -> tcp_tx
   logic tseg_ready;
@@ -311,7 +340,7 @@ module netsvtack (
     .m_tuser(ctx_tuser)
   );
 
-  tcp_rx u_tcp_rx ( // the data stream waits for the receive buffer
+  tcp_rx u_tcp_rx (
     .clk(clk),
     .rst_n(rst_n),
     .cfg_ip(cfg_ip),
@@ -331,14 +360,48 @@ module netsvtack (
     .seg_flags(seg_flags),
     .seg_window(seg_window),
     .seg_len(seg_len),
-    .m_tdata(),
-    .m_tkeep(),
-    .m_tvalid(),
-    .m_tlast(),
-    .m_tuser()
+    .m_tdata(trx_tdata),
+    .m_tkeep(trx_tkeep),
+    .m_tvalid(trx_tvalid),
+    .m_tlast(trx_tlast),
+    .m_tuser(trx_tuser)
   );
 
-  tcp_ctrl u_tcp_ctrl (
+  tcp_rx_buf u_tcp_rx_buf (
+    .clk(clk),
+    .rst_n(rst_n),
+    .s_tdata(trx_tdata),
+    .s_tkeep(trx_tkeep),
+    .s_tvalid(trx_tvalid),
+    .s_tlast(trx_tlast),
+    .s_tuser(trx_tuser),
+    .commit(rx_commit),
+    .rollback(rx_rollback),
+    .over(rx_over),
+    .space(rx_space),
+    .m_tdata(tcp_rx_tdata),
+    .m_tkeep(tcp_rx_tkeep),
+    .m_tvalid(tcp_rx_tvalid),
+    .m_tready(tcp_rx_tready)
+  );
+
+  tcp_tx_buf u_tcp_tx_buf (
+    .clk(clk),
+    .rst_n(rst_n),
+    .init(tbuf_init),
+    .init_seq(tbuf_init_seq),
+    .open(tcp_connected),
+    .acked(tbuf_acked),
+    .s_tdata(tcp_tx_tdata),
+    .s_tkeep(tcp_tx_tkeep),
+    .s_tvalid(tcp_tx_tvalid),
+    .s_tready(tcp_tx_tready),
+    .wr_seq(tbuf_wr_seq),
+    .rd_seq(tbuf_rd_seq),
+    .rd_data(tbuf_rd_data)
+  );
+
+  tcp_ctrl #(.RTO(TCP_RTO)) u_tcp_ctrl (
     .clk(clk),
     .rst_n(rst_n),
     .cfg_port(cfg_tcp_port),
@@ -351,8 +414,10 @@ module netsvtack (
     .seg_flags(seg_flags),
     .seg_window(seg_window),
     .seg_len(seg_len),
-    .rx_accept(),
-    .rx_space(16'h0),
+    .rx_commit(rx_commit),
+    .rx_rollback(rx_rollback),
+    .rx_over(rx_over),
+    .rx_space(rx_space),
     .tx_valid(tseg_valid),
     .tx_ready(tseg_ready),
     .tx_dst_ip(tseg_dst_ip),
@@ -362,14 +427,17 @@ module netsvtack (
     .tx_flags(tseg_flags),
     .tx_window(tseg_window),
     .tx_len(tseg_len),
-    .tx_avail(16'h0),
-    .tx_acked(),
+    .tx_init(tbuf_init),
+    .tx_init_seq(tbuf_init_seq),
+    .tx_wr_seq(tbuf_wr_seq),
+    .tx_acked(tbuf_acked),
     .connected(tcp_connected)
   );
 
-  tcp_tx u_tcp_tx ( // the data stream waits for the send buffer
+  tcp_tx u_tcp_tx (
     .clk(clk),
     .rst_n(rst_n),
+    .cfg_ip(cfg_ip),
     .cfg_port(cfg_tcp_port),
     .tx_valid(tseg_valid),
     .tx_ready(tseg_ready),
@@ -380,11 +448,8 @@ module netsvtack (
     .tx_flags(tseg_flags),
     .tx_window(tseg_window),
     .tx_len(tseg_len),
-    .s_tdata(64'h0),
-    .s_tkeep(8'h00),
-    .s_tvalid(1'b0),
-    .s_tready(),
-    .s_tlast(1'b0),
+    .rd_seq(tbuf_rd_seq),
+    .rd_data(tbuf_rd_data),
     .m_dst_ip(ttx_dst_ip),
     .m_len(ttx_len),
     .m_tdata(ttx_tdata),

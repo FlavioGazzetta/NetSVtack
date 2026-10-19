@@ -107,6 +107,36 @@ static inline Bytes icmp_echo(uint8_t type, uint16_t id, uint16_t seq, const Byt
     return p;
 }
 
+static inline uint16_t tcp_checksum(uint32_t src, uint32_t dst, const Bytes &seg){
+    Bytes all;
+    put32(all, src);
+    put32(all, dst);
+    put16(all, 6);
+    put16(all, seg.size());
+    all.insert(all.end(), seg.begin(), seg.end());
+    return ip_checksum(all.data(), all.size());
+}
+
+static inline Bytes tcp_segment(uint32_t src, uint32_t dst, uint16_t src_port, uint16_t dst_port, uint32_t seq, uint32_t ack,
+                                uint8_t flags, uint16_t window, const Bytes &options, const Bytes &data){
+    Bytes p;
+    put16(p, src_port);
+    put16(p, dst_port);
+    put32(p, seq);
+    put32(p, ack);
+    p.push_back((5 + options.size() / 4) << 4);
+    p.push_back(flags);
+    put16(p, window);
+    put16(p, 0);
+    put16(p, 0);
+    p.insert(p.end(), options.begin(), options.end());
+    p.insert(p.end(), data.begin(), data.end());
+    uint16_t c = tcp_checksum(src, dst, p);
+    p[16] = c >> 8;
+    p[17] = c & 0xFF;
+    return p;
+}
+
 // padded up to the 60 bytes a frame has before its FCS
 static inline Bytes padded(Bytes f){
     if (f.size() < 60){
