@@ -7,7 +7,7 @@
 #   make sanity                      every suite in tb/regressions/sanity.yml
 #   make nightly                     sanity, then the suites in nightly.yml at nightly level
 #   make list                        suites and their commands
-#   make mac | common | top          one suite (sanity level)
+#   make mac | common | tcp | top    one suite (sanity level)
 #   make lint                        Verilator lint of all RTL
 #   make clean
 #

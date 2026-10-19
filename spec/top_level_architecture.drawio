@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="top" name="Top level">
-        <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1560" pageHeight="600" background="#FFFFFF" math="0" shadow="0">
+        <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1560" pageHeight="620" background="#FFFFFF" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -11,7 +11,7 @@
                     <mxGeometry x="130" y="60" width="120" height="380" as="geometry"/>
                 </mxCell>
                 <mxCell id="frame" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontSize=12;fillColor=none;verticalAlign=top;align=left;spacingLeft=8;spacingTop=4;rounded=1;arcSize=3;dashed=1;" value="&lt;b&gt;netsvtack&lt;/b&gt;" vertex="1">
-                    <mxGeometry x="290" y="20" width="900" height="460" as="geometry"/>
+                    <mxGeometry x="290" y="20" width="1060" height="460" as="geometry"/>
                 </mxCell>
                 <mxCell id="macrx" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontSize=12;" value="&lt;b&gt;mac_rx&lt;/b&gt;&lt;br&gt;preamble · FCS" vertex="1">
                     <mxGeometry x="320" y="80" width="110" height="60" as="geometry"/>
@@ -35,7 +35,7 @@
                     <mxGeometry x="490" y="210" width="120" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="arpc" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontSize=12;" value="&lt;b&gt;arp_cache&lt;/b&gt;&lt;br&gt;8 entries" vertex="1">
-                    <mxGeometry x="720" y="210" width="120" height="70" as="geometry"/>
+                    <mxGeometry x="700" y="210" width="110" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="iprx" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontSize=12;" value="&lt;b&gt;ipv4_rx&lt;/b&gt;&lt;br&gt;hdr_strip 20&lt;br&gt;checksum · trim" vertex="1">
                     <mxGeometry x="720" y="80" width="120" height="60" as="geometry"/>
@@ -43,26 +43,35 @@
                 <mxCell id="iptx" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontSize=12;" value="&lt;b&gt;ipv4_tx&lt;/b&gt;&lt;br&gt;hdr_insert 20&lt;br&gt;checksum" vertex="1">
                     <mxGeometry x="720" y="360" width="120" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="pmux" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontSize=12;" value="frame_mux&lt;br&gt;TCP first" vertex="1">
-                    <mxGeometry x="880" y="360" width="80" height="60" as="geometry"/>
+                <mxCell id="icmp" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontSize=12;" value="&lt;b&gt;icmp&lt;/b&gt;&lt;br&gt;echo reply&lt;br&gt;frame_fifo" vertex="1">
+                    <mxGeometry x="870" y="215" width="100" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="pmux" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontSize=12;" value="frame_mux x2&lt;br&gt;TCP · UDP&lt;br&gt;ICMP" vertex="1">
+                    <mxGeometry x="880" y="360" width="90" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="udprx" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontSize=12;" value="&lt;b&gt;udp_rx&lt;/b&gt;&lt;br&gt;hdr_strip 8" vertex="1">
-                    <mxGeometry x="1020" y="50" width="130" height="50" as="geometry"/>
+                    <mxGeometry x="1020" y="45" width="130" height="45" as="geometry"/>
                 </mxCell>
-                <mxCell id="tcprx" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontSize=12;dashed=1;" value="tcp_rx" vertex="1">
-                    <mxGeometry x="1020" y="125" width="130" height="50" as="geometry"/>
+                <mxCell id="tcprx" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontSize=12;" value="&lt;b&gt;tcp_rx&lt;/b&gt;&lt;br&gt;hdr_strip 20&lt;br&gt;checksum" vertex="1">
+                    <mxGeometry x="1020" y="115" width="130" height="55" as="geometry"/>
                 </mxCell>
-                <mxCell id="tcpc" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontSize=12;dashed=1;" value="tcp_ctrl&lt;br&gt;state · seq · ack" vertex="1">
-                    <mxGeometry x="1020" y="220" width="130" height="60" as="geometry"/>
+                <mxCell id="tcpc" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontSize=12;" value="&lt;b&gt;tcp_ctrl&lt;/b&gt;&lt;br&gt;state · seq · ack&lt;br&gt;window · timer" vertex="1">
+                    <mxGeometry x="1020" y="215" width="130" height="65" as="geometry"/>
                 </mxCell>
-                <mxCell id="tcptx" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontSize=12;dashed=1;" value="tcp_tx" vertex="1">
-                    <mxGeometry x="1020" y="325" width="130" height="50" as="geometry"/>
+                <mxCell id="tcptx" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontSize=12;" value="&lt;b&gt;tcp_tx&lt;/b&gt;&lt;br&gt;hdr_insert 20&lt;br&gt;checksum" vertex="1">
+                    <mxGeometry x="1020" y="320" width="130" height="55" as="geometry"/>
                 </mxCell>
                 <mxCell id="udptx" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontSize=12;" value="&lt;b&gt;udp_tx&lt;/b&gt;&lt;br&gt;hdr_insert 8" vertex="1">
-                    <mxGeometry x="1020" y="400" width="130" height="50" as="geometry"/>
+                    <mxGeometry x="1020" y="405" width="130" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="rxbuf" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontSize=12;" value="&lt;b&gt;tcp_rx_buf&lt;/b&gt;&lt;br&gt;16 KB" vertex="1">
+                    <mxGeometry x="1200" y="115" width="120" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="txbuf" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontSize=12;" value="&lt;b&gt;tcp_tx_buf&lt;/b&gt;&lt;br&gt;16 KB" vertex="1">
+                    <mxGeometry x="1200" y="320" width="120" height="55" as="geometry"/>
                 </mxCell>
                 <mxCell id="app" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontSize=12;dashed=1;" value="&lt;b&gt;application&lt;/b&gt;&lt;br&gt;streams&lt;br&gt;&lt;br&gt;loopback for&lt;br&gt;the round trip&lt;br&gt;measurement" vertex="1">
-                    <mxGeometry x="1230" y="50" width="130" height="400" as="geometry"/>
+                    <mxGeometry x="1400" y="45" width="130" height="405" as="geometry"/>
                 </mxCell>
                 <mxCell id="e1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=1.000000;exitY=0.200000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.000000;entryY=0.200000;entryDx=0;entryDy=0;entryPerimeter=0;" value="" edge="1" source="sfp" target="phy">
                     <mxGeometry relative="1" as="geometry"/>
@@ -88,7 +97,7 @@
                 <mxCell id="e8" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=1.000000;exitY=0.500000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.000000;entryY=0.500000;entryDx=0;entryDy=0;entryPerimeter=0;" value="learn" edge="1" source="arp" target="arpc">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e9" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.500000;exitY=1.000000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.500000;entryY=0.000000;entryDx=0;entryDy=0;entryPerimeter=0;" value="lk_hit&lt;br&gt;lk_mac" edge="1" source="arpc" target="iptx">
+                <mxCell id="e9" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.836400;exitY=1.000000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.600000;entryY=0.000000;entryDx=0;entryDy=0;entryPerimeter=0;" value="lk_hit&lt;br&gt;lk_mac" edge="1" source="arpc" target="iptx">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="e10" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.200000;exitY=0.000000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.800000;entryY=1.000000;entryDx=0;entryDy=0;entryPerimeter=0;" value="arp_req" edge="1" source="iptx" target="arp">
@@ -108,49 +117,105 @@
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="e12" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=1.000000;exitY=0.250000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.000000;entryY=0.500000;entryDx=0;entryDy=0;entryPerimeter=0;" value="m_udp" edge="1" source="iprx" target="udprx">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="990" y="95"/>
+                            <mxPoint x="990" y="67.5"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e13" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=1.000000;exitY=0.750000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.000000;entryY=0.500000;entryDx=0;entryDy=0;entryPerimeter=0;" value="m_tcp" edge="1" source="iprx" target="tcprx">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="990" y="125"/>
+                            <mxPoint x="990" y="142.5"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e14" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.950000;exitY=1.000000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.000000;entryY=0.500000;entryDx=0;entryDy=0;entryPerimeter=0;" value="m_icmp" edge="1" source="iprx" target="icmp">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="834" y="245"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e15" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.500000;exitY=1.000000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.555600;entryY=0.000000;entryDx=0;entryDy=0;entryPerimeter=0;" value="" edge="1" source="icmp" target="pmux">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e13" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;dashed=1;exitX=1.000000;exitY=0.750000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.000000;entryY=0.500000;entryDx=0;entryDy=0;entryPerimeter=0;" value="m_tcp" edge="1" source="iprx" target="tcprx">
+                <mxCell id="e16" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=1.000000;exitY=0.500000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.000000;entryY=0.055600;entryDx=0;entryDy=0;entryPerimeter=0;" value="udp_rx_*" edge="1" source="udprx" target="app">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e14" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=1.000000;exitY=0.500000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.000000;entryY=0.062500;entryDx=0;entryDy=0;entryPerimeter=0;" value="udp_rx_*" edge="1" source="udprx" target="app">
+                <mxCell id="e17" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=1.000000;exitY=0.500000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.000000;entryY=0.500000;entryDx=0;entryDy=0;entryPerimeter=0;" value="" edge="1" source="tcprx" target="rxbuf">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e15" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;dashed=1;exitX=0.500000;exitY=1.000000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.500000;entryY=0.000000;entryDx=0;entryDy=0;entryPerimeter=0;" value="seg_*" edge="1" source="tcprx" target="tcpc">
+                <mxCell id="e18" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=1.000000;exitY=0.500000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.000000;entryY=0.240700;entryDx=0;entryDy=0;entryPerimeter=0;" value="tcp_rx_*" edge="1" source="rxbuf" target="app">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e16" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;dashed=1;exitX=0.500000;exitY=1.000000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.500000;entryY=0.000000;entryDx=0;entryDy=0;entryPerimeter=0;" value="tx_*" edge="1" source="tcpc" target="tcptx">
+                <mxCell id="e19" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.500000;exitY=1.000000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.500000;entryY=0.000000;entryDx=0;entryDy=0;entryPerimeter=0;" value="seg_*" edge="1" source="tcprx" target="tcpc">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e17" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.000000;exitY=0.937500;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.000000;entryY=0.500000;entryDx=0;entryDy=0;entryPerimeter=0;" value="udp_tx_*" edge="1" source="app" target="udptx">
+                <mxCell id="e20" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.500000;exitY=1.000000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.500000;entryY=0.000000;entryDx=0;entryDy=0;entryPerimeter=0;" value="tx_*" edge="1" source="tcpc" target="tcptx">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e18" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;dashed=1;exitX=0.000000;exitY=0.500000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.000000;entryY=0.250000;entryDx=0;entryDy=0;entryPerimeter=0;" value="" edge="1" source="tcptx" target="pmux">
+                <mxCell id="e21" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=1.000000;exitY=0.250000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.500000;entryY=1.000000;entryDx=0;entryDy=0;entryPerimeter=0;" value="commit" edge="1" source="tcpc" target="rxbuf">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1260" y="231.25"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e22" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=1.000000;exitY=0.750000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.500000;entryY=0.000000;entryDx=0;entryDy=0;entryPerimeter=0;" value="acked" edge="1" source="tcpc" target="txbuf">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1260" y="263.75"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e23" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.000000;exitY=0.746900;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.000000;entryY=0.500000;entryDx=0;entryDy=0;entryPerimeter=0;" value="tcp_tx_*" edge="1" source="app" target="txbuf">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e19" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.000000;exitY=0.500000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.000000;entryY=0.750000;entryDx=0;entryDy=0;entryPerimeter=0;" value="" edge="1" source="udptx" target="pmux">
+                <mxCell id="e24" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.000000;exitY=0.500000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.000000;entryY=0.500000;entryDx=0;entryDy=0;entryPerimeter=0;" value="rd_data" edge="1" source="txbuf" target="tcptx">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e20" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.000000;exitY=0.500000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.000000;entryY=0.500000;entryDx=0;entryDy=0;entryPerimeter=0;" value="" edge="1" source="pmux" target="iptx">
+                <mxCell id="e25" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.000000;exitY=0.944400;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.000000;entryY=0.500000;entryDx=0;entryDy=0;entryPerimeter=0;" value="udp_tx_*" edge="1" source="app" target="udptx">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e21" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.000000;exitY=0.500000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.000000;entryY=0.500000;entryDx=0;entryDy=0;entryPerimeter=0;" value="" edge="1" source="iptx" target="emux">
+                <mxCell id="e26" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.000000;exitY=0.500000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.000000;entryY=0.250000;entryDx=0;entryDy=0;entryPerimeter=0;" value="" edge="1" source="tcptx" target="pmux">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="995" y="347.5"/>
+                            <mxPoint x="995" y="375"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e27" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.000000;exitY=0.500000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.000000;entryY=0.750000;entryDx=0;entryDy=0;entryPerimeter=0;" value="" edge="1" source="udptx" target="pmux">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="995" y="427.5"/>
+                            <mxPoint x="995" y="405"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e28" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.000000;exitY=0.500000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.000000;entryY=0.500000;entryDx=0;entryDy=0;entryPerimeter=0;" value="" edge="1" source="pmux" target="iptx">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e22" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.000000;exitY=0.500000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.000000;entryY=0.500000;entryDx=0;entryDy=0;entryPerimeter=0;" value="" edge="1" source="emux" target="ethtx">
+                <mxCell id="e29" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.000000;exitY=0.500000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.000000;entryY=0.500000;entryDx=0;entryDy=0;entryPerimeter=0;" value="" edge="1" source="iptx" target="emux">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e23" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.000000;exitY=0.500000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.000000;entryY=0.500000;entryDx=0;entryDy=0;entryPerimeter=0;" value="" edge="1" source="ethtx" target="mactx">
+                <mxCell id="e30" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.000000;exitY=0.500000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.000000;entryY=0.500000;entryDx=0;entryDy=0;entryPerimeter=0;" value="" edge="1" source="emux" target="ethtx">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e24" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.500000;exitY=0.000000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.500000;entryY=1.000000;entryDx=0;entryDy=0;entryPerimeter=0;" value="" edge="1" source="crc" target="macrx">
+                <mxCell id="e31" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.000000;exitY=0.500000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1.000000;entryY=0.500000;entryDx=0;entryDy=0;entryPerimeter=0;" value="" edge="1" source="ethtx" target="mactx">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e25" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.500000;exitY=1.000000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.500000;entryY=0.000000;entryDx=0;entryDy=0;entryPerimeter=0;" value="" edge="1" source="crc" target="mactx">
+                <mxCell id="e32" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.500000;exitY=0.000000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.500000;entryY=1.000000;entryDx=0;entryDy=0;entryPerimeter=0;" value="" edge="1" source="crc" target="macrx">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="note" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontColor=#000000;fontSize=11;" value="Solid boxes are built and verified. Dashed boxes are still to do (the TCP modules are skeletons with their ports).&lt;br&gt;Every stream between blocks is 64 bit AXI-Stream with tkeep, tuser on tlast marks a frame to drop. Receive has no tready.&lt;br&gt;Each layer takes its header off with hdr_strip and puts it on with hdr_insert, the number is the header length in bytes." vertex="1">
-                    <mxGeometry x="290" y="500" width="1000" height="80" as="geometry"/>
+                <mxCell id="e33" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontSize=10;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;exitX=0.500000;exitY=1.000000;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.500000;entryY=0.000000;entryDx=0;entryDy=0;entryPerimeter=0;" value="" edge="1" source="crc" target="mactx">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="note" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontColor=#000000;fontSize=11;" value="Solid boxes are built and verified in simulation. Dashed boxes are still to do.&lt;br&gt;Every stream between blocks is 64 bit AXI-Stream with tkeep, tuser on tlast marks a frame to drop. Receive has no tready up to the TCP receive buffer.&lt;br&gt;Each layer takes its header off with hdr_strip and puts it on with hdr_insert, the number is the header length in bytes.&lt;br&gt;TCP is one connection, opened by the peer. tcp_tx reads a segment out of tcp_tx_buf into a frame_fifo first, so its checksum is known before the header goes out." vertex="1">
+                    <mxGeometry x="290" y="500" width="1060" height="100" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>

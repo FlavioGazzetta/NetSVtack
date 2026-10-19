@@ -27,19 +27,23 @@ Done and verified in simulation:
   Ethernet padding off. `ipv4_tx` builds the header with its checksum and
   looks the next hop up in the ARP cache.
 - UDP: `udp_rx` and `udp_tx`.
-- `netsvtack`, the top level, with all of it wired from XGMII to the UDP
-  streams.
+- ICMP: `icmp` answers echo requests, so the stack can be pinged.
+- TCP, one connection opened by the peer: `tcp_rx` parses the header and
+  checks the checksum, `tcp_ctrl` keeps the state and the sequence numbers,
+  `tcp_tx` builds segments, and `tcp_rx_buf` and `tcp_tx_buf` hold 16 KB each
+  way. Data that is not acknowledged in time is sent again from the oldest
+  byte, and a peer that stops answering is dropped after 8 tries.
+- `netsvtack`, the top level, with all of it wired from XGMII to the UDP and
+  TCP streams.
 
 In simulation a datagram's first word reaches the application 14 to 18 clocks
 after the start of its frame goes into the XGMII pins and its last word 7 to 9
 clocks after the end of the frame. Going out, the frame starts on XGMII 5
 clocks after the application offers the first word.
 
-Skeletons, ports only: `tcp_rx`, `tcp_ctrl`, `tcp_tx`.
-
-Still to do: TCP (one connection, passive open, with receive and send
-buffers), ICMP echo, then the ZCU106 build (10GBASE-R PCS/PMA on a GTH, and a
-clock crossing from the recovered receive clock).
+Still to do: the ZCU106 build (10GBASE-R PCS/PMA on a GTH, and a clock
+crossing from the recovered receive clock), then the measurements on the
+board.
 
 Known gaps:
 
@@ -50,20 +54,28 @@ Known gaps:
 - A datagram for an address that is not in the ARP cache is dropped and an ARP
   request goes out instead. Cache entries never age.
 - IPv4 packets with options or in fragments are dropped. No VLAN tags.
+- TCP: no congestion control, no fast retransmit and no zero window probe.
+  Segments that arrive out of order are dropped and asked for again. TCP
+  options are ignored apart from sending the MSS, and data in a segment that
+  has options is not taken. Nothing is sent back to a port that is closed.
+  The stack cannot open or close a connection itself, the peer does both.
+- `tcp_tx` copies a segment into a FIFO before it goes out, to have the
+  checksum for the header. That costs one clock per 8 bytes of data.
 
 ## Layout
 
 ```
-rtl/common/        hdr_strip, hdr_insert, frame_mux
+rtl/common/        hdr_strip, hdr_insert, frame_mux, frame_fifo
 rtl/mac/           crc32, mac_rx, mac_tx
 rtl/eth/           eth_rx, eth_tx
 rtl/arp/           arp, arp_cache
 rtl/ipv4/          ipv4_rx, ipv4_tx
 rtl/udp/           udp_rx, udp_tx
-rtl/tcp/           tcp_rx, tcp_ctrl, tcp_tx (skeletons)
+rtl/icmp/          icmp
+rtl/tcp/           tcp_rx, tcp_ctrl, tcp_tx, tcp_rx_buf, tcp_tx_buf
 rtl/top/           netsvtack
 
-tb/verilator/      C++ testbenches: mac, common, top
+tb/verilator/      C++ testbenches: mac, common, tcp, top
 tb/verilator/lib.sh    build, run and summary shared by every <block>_test.sh
 tb/regressions/    regression YAMLs and the runner
 spec/              diagrams
@@ -77,8 +89,11 @@ first word is taken.
 
 The `top` testbench drives the whole stack through XGMII: ARP requests and
 replies, datagrams in both directions, and frames that have to be dropped
-(bad FCS, another MAC or IP, bad checksum, wrong length, fragments). With
-`:pcap` it writes every frame to a capture that opens in Wireshark.
+(bad FCS, another MAC or IP, bad checksum, wrong length, fragments), and
+pings. The `tcp` testbench has a peer that opens connections to the stack,
+sends and receives random data, loses segments both ways, ignores the window
+now and then, and closes. With `:pcap` either one writes every frame to a
+capture that opens in Wireshark.
 
 ## Getting started
 
@@ -92,7 +107,7 @@ The testbenches are written in C++ and run by the regression script
 ```
 make sanity      quick run of every suite
 make nightly     sanity, then each suite with more seeds and extra variants
-make top         a single suite (mac, common, top)
+make top         a single suite (mac, common, tcp, top)
 make list        shows each suite and the command it runs
 make lint        lints all the RTL
 ```
