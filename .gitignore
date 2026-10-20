@@ -35,3 +35,8 @@ venv/
 
 .vscode/
 TODO.md
+/.Xil/
+/synth/out/
+/fpga/*/out/
+*.jou
+*.log
