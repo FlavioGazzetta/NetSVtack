@@ -1,5 +1,6 @@
 suites:
   - mac
+  - pcs
   - common
   - tcp
   - top

@@ -1,6 +1,7 @@
 regressions:
   - sanity
   - mac
+  - pcs
   - common
   - tcp
   - top

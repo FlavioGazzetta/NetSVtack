@@ -1,0 +1,3 @@
+name: pcs
+sanity: ./tb/verilator/pcs/pcs_test.sh
+nightly: ./tb/verilator/pcs/pcs_test.sh :sweep :random_seeds=10
