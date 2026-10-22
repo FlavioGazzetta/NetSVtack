@@ -3,6 +3,7 @@
 #include "../mac/mac_model.h"
 
 #include <array>
+#include <deque>
 
 typedef std::vector<uint8_t> Bytes;
 typedef std::array<uint8_t, 6> Mac;
@@ -144,3 +145,31 @@ static inline Bytes padded(Bytes f){
     }
     return f;
 }
+
+// The receive side of the stack has its own clock. run() goes between low()
+// and high() and gives rx_clk the rising edges that fall in that clock, each
+// one taking a word off the wire. TB_PPM sets how far off clk it runs.
+template <class T> struct RxClock {
+    double ratio = 1.0 + tb_env("TB_PPM", 0) * 1e-6;
+    double phase = 0.5;
+
+    void run(T *top, std::deque<Lane> &wire){
+        for (phase += ratio; phase >= 1.0; phase -= 1.0){
+            top->xgmii_rxd = 0;
+            top->xgmii_rxc = 0;
+            for (int i = 0; i < 8; i++){
+                Lane l = {XG_IDLE, true};
+                if (!wire.empty()){
+                    l = wire.front();
+                    wire.pop_front();
+                }
+                top->xgmii_rxd |= (uint64_t)l.d << (8 * i);
+                top->xgmii_rxc |= (l.c ? 1 : 0) << i;
+            }
+            top->rx_clk = 0;
+            top->eval();
+            top->rx_clk = 1;
+            top->eval();
+        }
+    }
+};

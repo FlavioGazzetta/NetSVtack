@@ -27,6 +27,7 @@ static Pcap *pcap;
 static std::mt19937 rng;
 
 static std::deque<Lane> wire; // XGMII into the stack, what has not gone in yet
+static RxClock<Vtop> rx_clock;
 static std::deque<uint64_t> rx_start; // clock the first word of a good datagram went in
 static std::deque<uint64_t> rx_end;
 
@@ -220,18 +221,6 @@ static bool busy(){
 }
 
 static void step(){
-    top->xgmii_rxd = 0;
-    top->xgmii_rxc = 0;
-    for (int i = 0; i < 8; i++){
-        Lane l = {XG_IDLE, true};
-        if (!wire.empty()){
-            l = wire.front();
-            wire.pop_front();
-        }
-        top->xgmii_rxd |= (uint64_t)l.d << (8 * i);
-        top->xgmii_rxc |= (l.c ? 1 : 0) << i;
-    }
-
     top->udp_tx_tvalid = 0;
     size_t n = 0;
     bool last = false;
@@ -261,6 +250,7 @@ static void step(){
         app_gap--;
     }
     sim->low();
+    rx_clock.run(top, wire);
     if (top->udp_tx_tvalid && top->udp_tx_tready){
         app_pos += n;
         if (last){
@@ -423,12 +413,16 @@ int main(int argc, char **argv, char **env){
     top->cfg_netmask = NETMASK;
     top->cfg_tcp_port = 5001;
     top->rst_n = 0;
+    top->rx_rst_n = 0;
     top->xgmii_rxd = 0x0707070707070707ull;
     top->xgmii_rxc = 0xFF;
     for (int i = 0; i < 3; i++){
-        sim->tick();
+        sim->low();
+        rx_clock.run(top, wire);
+        sim->high();
     }
     top->rst_n = 1;
+    top->rx_rst_n = 1;
 
     for (int o = 0; o < ops && failures < 10; o++){
         int r = rng() % 100;

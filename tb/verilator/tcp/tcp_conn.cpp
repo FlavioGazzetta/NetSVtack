@@ -23,6 +23,7 @@ static int loss; // percent of segments lost, each way
 static int push_pct; // percent of the peer's segments that ignore the stack's window
 
 static std::deque<Lane> wire; // XGMII into the stack
+static RxClock<Vtop> rx_clock;
 static Bytes tx_got;
 static bool tx_in_frame = false;
 
@@ -295,18 +296,6 @@ static int app_stall;
 static int app_pause;
 
 static void step(){
-    top->xgmii_rxd = 0;
-    top->xgmii_rxc = 0;
-    for (int i = 0; i < 8; i++){
-        Lane l = {XG_IDLE, true};
-        if (!wire.empty()){
-            l = wire.front();
-            wire.pop_front();
-        }
-        top->xgmii_rxd |= (uint64_t)l.d << (8 * i);
-        top->xgmii_rxc |= (l.c ? 1 : 0) << i;
-    }
-
     size_t n = to_peer.size() - app_wr;
     n = n > 8 ? 8 : n;
     if (n > 1 && rng() % 3 == 0){
@@ -320,6 +309,7 @@ static void step(){
     top->tcp_tx_tvalid = n > 0 && (app_pause == 0 || rng() % (app_pause + 1) == 0);
     top->tcp_rx_tready = app_stall == 0 || rng() % (app_stall + 1) == 0;
     sim->low();
+    rx_clock.run(top, wire);
     if (top->tcp_tx_tvalid && top->tcp_tx_tready){
         app_wr += n;
     }
@@ -364,10 +354,14 @@ int main(int argc, char **argv, char **env){
     top->xgmii_rxd = 0x0707070707070707ull;
     top->xgmii_rxc = 0xFF;
     top->rst_n = 0;
+    top->rx_rst_n = 0;
     for (int i = 0; i < 3; i++){
-        sim->tick();
+        sim->low();
+        rx_clock.run(top, wire);
+        sim->high();
     }
     top->rst_n = 1;
+    top->rx_rst_n = 1;
 
     // the stack learns the peer's MAC from its ARP request
     send_frame(eth_frame(MAC_BROADCAST, PEER_MAC, 0x0806, arp_packet(1, PEER_MAC, PEER_IP, Mac{}, STACK_IP)));

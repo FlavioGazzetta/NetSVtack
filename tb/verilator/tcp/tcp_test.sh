@@ -11,6 +11,7 @@ tb_build tcp_conn netsvtack tcp_conn.cpp $RTL -GTCP_RTO=3000
 tb_run tcp_rx
 tb_run tcp_conn
 tb_run tcp_conn LOSS=0
+tb_run tcp_conn PPM=-1000
 tb_run tcp_conn PUSH=30 BYTES=60000
 
 tb_sweep tcp_rx SEGMENTS=200000

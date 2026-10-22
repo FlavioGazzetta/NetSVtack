@@ -4,6 +4,8 @@ module netsvtack #(
 
   input logic clk, // 156.25 MHz
   input logic rst_n,
+  input logic rx_clk, // the recovered receive clock, only xgmii_rxd and xgmii_rxc are on it
+  input logic rx_rst_n,
 
   input logic [47:0] cfg_mac,
   input logic [31:0] cfg_ip,
@@ -60,11 +62,17 @@ module netsvtack #(
   localparam logic [7:0] PROTOCOL_TCP = 8'd6;
   localparam logic [7:0] PROTOCOL_UDP = 8'd17;
 
-  logic [63:0] mrx_tdata; // mac_rx -> eth_rx
+  logic [63:0] mrx_tdata; // mac_rx -> clock crossing, on rx_clk
   logic [7:0] mrx_tkeep;
   logic mrx_tvalid;
   logic mrx_tlast;
   logic mrx_tuser;
+
+  logic [63:0] crx_tdata; // clock crossing -> eth_rx
+  logic [7:0] crx_tkeep;
+  logic crx_tvalid;
+  logic crx_tlast;
+  logic crx_tuser;
 
   logic erx_arp; // eth_rx -> arp, ipv4_rx
   logic erx_ipv4;
@@ -211,8 +219,8 @@ module netsvtack #(
   logic [15:0] tseg_len;
 
   mac_rx u_mac_rx (
-    .clk(clk),
-    .rst_n(rst_n),
+    .clk(rx_clk),
+    .rst_n(rx_rst_n),
     .xgmii_rxd(xgmii_rxd),
     .xgmii_rxc(xgmii_rxc),
     .m_tdata(mrx_tdata),
@@ -220,19 +228,39 @@ module netsvtack #(
     .m_tvalid(mrx_tvalid),
     .m_tlast(mrx_tlast),
     .m_tuser(mrx_tuser),
-    .stat_good(stat_rx_good),
-    .stat_bad(stat_rx_bad)
+    .stat_good(),
+    .stat_bad()
   );
 
-  eth_rx u_eth_rx (
-    .clk(clk),
-    .rst_n(rst_n),
-    .cfg_mac(cfg_mac),
+  frame_cdc u_rx_cdc (
+    .s_clk(rx_clk),
+    .s_rst_n(rx_rst_n),
     .s_tdata(mrx_tdata),
     .s_tkeep(mrx_tkeep),
     .s_tvalid(mrx_tvalid),
     .s_tlast(mrx_tlast),
     .s_tuser(mrx_tuser),
+    .m_clk(clk),
+    .m_rst_n(rst_n),
+    .m_tdata(crx_tdata),
+    .m_tkeep(crx_tkeep),
+    .m_tvalid(crx_tvalid),
+    .m_tlast(crx_tlast),
+    .m_tuser(crx_tuser)
+  );
+
+  assign stat_rx_good = crx_tvalid && crx_tlast && !crx_tuser;
+  assign stat_rx_bad = crx_tvalid && crx_tlast && crx_tuser;
+
+  eth_rx u_eth_rx (
+    .clk(clk),
+    .rst_n(rst_n),
+    .cfg_mac(cfg_mac),
+    .s_tdata(crx_tdata),
+    .s_tkeep(crx_tkeep),
+    .s_tvalid(crx_tvalid),
+    .s_tlast(crx_tlast),
+    .s_tuser(crx_tuser),
     .m_src_mac(),
     .m_arp(erx_arp),
     .m_ipv4(erx_ipv4),

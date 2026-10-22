@@ -8,6 +8,8 @@ RTL=$(cd "$REPO_ROOT" && find rtl -name '*.sv' | sort)
 tb_build netsvtack netsvtack netsvtack.cpp $RTL
 
 tb_run netsvtack
+tb_run netsvtack PPM=1000
+tb_run netsvtack PPM=-1000
 
 tb_sweep netsvtack OPS=100000
 
