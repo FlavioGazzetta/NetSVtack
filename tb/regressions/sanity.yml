@@ -4,3 +4,4 @@ suites:
   - common
   - tcp
   - top
+  - echo

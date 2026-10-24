@@ -5,3 +5,4 @@ regressions:
   - common
   - tcp
   - top
+  - echo
