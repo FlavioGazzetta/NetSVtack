@@ -40,3 +40,4 @@ TODO.md
 /fpga/*/out/
 *.jou
 *.log
+clockInfo.txt
