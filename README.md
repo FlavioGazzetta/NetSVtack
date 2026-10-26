@@ -34,16 +34,32 @@ Done and verified in simulation:
   way. Data that is not acknowledged in time is sent again from the oldest
   byte, and a peer that stops answering is dropped after 8 tries.
 - `netsvtack`, the top level, with all of it wired from XGMII to the UDP and
-  TCP streams.
+  TCP streams. `mac_rx` runs on the clock recovered from the link, and
+  `frame_cdc`, an asynchronous FIFO, brings its frames onto the transmit clock
+  that everything else uses.
+- the 10GBASE-R PCS: `pcs_tx` encodes XGMII into 66 bit blocks and scrambles
+  them, `pcs_rx` finds the block boundary, descrambles and decodes. The
+  serial side is Vivado's GTH transceiver IP with its 64B/66B gearbox.
+- `netsvtack_echo`, the design that goes on the board: the stack with
+  `udp_echo`, which sends every datagram back to where it came from, and the
+  TCP stream looped back into itself.
 
-In simulation a datagram's first word reaches the application 14 to 18 clocks
-after the start of its frame goes into the XGMII pins and its last word 7 to 9
-clocks after the end of the frame. Going out, the frame starts on XGMII 5
-clocks after the application offers the first word.
+In simulation a datagram's first word reaches the application 19 to 23 clocks
+after the start of its frame goes into the XGMII pins and its last word 12 to
+14 clocks after the end of the frame. Going out, the frame starts on XGMII 5
+clocks after the application offers the first word. With `udp_echo` a 64 byte
+frame starts coming back 29 to 30 clocks after it started going in (about 190
+ns), and any frame 19 to 21 clocks after its end. That is XGMII to XGMII: the
+PCS adds a clock each way and the transceiver its own delay, which only the
+board can give.
 
-Still to do: the ZCU106 build (10GBASE-R PCS/PMA on a GTH, and a clock
-crossing from the recovered receive clock), then the measurements on the
-board.
+The ZCU106 build (Vivado 2025.2) places and routes and writes a bitstream. All
+timing is met at 6.4 ns with 0.55 ns of slack on the transmit clock and 2.6 ns
+on the receive clock. The whole design is 7.9 k LUTs and 5.3 k flip-flops, 3%
+and 1% of the XCZU7EV, plus 13 block RAMs and one UltraRAM.
+
+Still to do: load it on the board, and measure the throughput and the round
+trip there and against the Linux kernel stack on the same link.
 
 Known gaps:
 
@@ -61,11 +77,21 @@ Known gaps:
   The stack cannot open or close a connection itself, the peer does both.
 - `tcp_tx` copies a segment into a FIFO before it goes out, to have the
   checksum for the header. That costs one clock per 8 bytes of data.
+- The PCS has no link fault signalling and no bit error rate monitor. It sends
+  idle whatever the receive side sees, and ordered sets that come in are
+  decoded and then ignored by the MAC.
+- `frame_cdc` relies on the two clocks being within a few hundred ppm, as two
+  ends of an Ethernet link are. What it does when it overflows is not tested.
+- The bitstream has never been on a board. The pins come from the board files
+  and from other ZCU106 designs, not from a link that came up.
+- Nothing resets the receive side of the transceiver when the link goes away
+  and comes back. If block lock does not return, press CPU_RESET.
 
 ## Layout
 
 ```
-rtl/common/        hdr_strip, hdr_insert, frame_mux, frame_fifo
+rtl/common/        hdr_strip, hdr_insert, frame_mux, frame_fifo, frame_cdc
+rtl/pcs/           pcs_tx, pcs_rx
 rtl/mac/           crc32, mac_rx, mac_tx
 rtl/eth/           eth_rx, eth_tx
 rtl/arp/           arp, arp_cache
@@ -73,9 +99,13 @@ rtl/ipv4/          ipv4_rx, ipv4_tx
 rtl/udp/           udp_rx, udp_tx
 rtl/icmp/          icmp
 rtl/tcp/           tcp_rx, tcp_ctrl, tcp_tx, tcp_rx_buf, tcp_tx_buf
-rtl/top/           netsvtack
+rtl/app/           udp_echo
+rtl/top/           netsvtack, netsvtack_echo
 
-tb/verilator/      C++ testbenches: mac, common, tcp, top
+fpga/zcu106/       board top level, transceiver wrapper, constraints, build.tcl
+synth/             out of context synthesis of one block
+
+tb/verilator/      C++ testbenches: mac, pcs, common, tcp, top, echo
 tb/verilator/lib.sh    build, run and summary shared by every <block>_test.sh
 tb/regressions/    regression YAMLs and the runner
 spec/              diagrams
@@ -95,6 +125,35 @@ sends and receives random data, loses segments both ways, ignores the window
 now and then, and closes. With `:pcap` either one writes every frame to a
 capture that opens in Wireshark.
 
+The `pcs` testbench puts the two halves of the PCS on a wire of single bits
+that starts at a random bit, loses a bit now and then so the lock has to be
+found again, has bit errors, and carries blocks that `pcs_tx` never sends
+(ordered sets, unknown types, bad headers). `cdc_link` in `common` runs
+`frame_cdc` with its two clocks up to 1000 ppm apart and checks that a frame
+comes out whole and without a gap. `echo` runs `netsvtack_echo` as the board
+would see it, and `top`, `tcp` and `echo` all take `:PPM=` to run the receive
+clock off the transmit clock.
+
+## Building for the ZCU106
+
+```
+vivado -mode batch -source fpga/zcu106/build.tcl
+```
+
+makes the transceiver IP, runs synthesis and place and route, and writes the
+reports and `netsvtack_zcu106.bit` to `fpga/zcu106/out/`. The board needs an
+SFP+ module or cable in cage SFP0 and the SI570 at its 156.25 MHz default. The
+design answers ARP and ping at 192.168.1.128 (MAC 02:00:00:00:00:01), echoes
+UDP on any port and TCP on port 5001. These are parameters of
+`netsvtack_echo`. LEDs 0 to 4: transceiver out of reset, block lock, TCP
+connected, a good frame came in, a bad frame came in.
+
+For timing and area of one block on its own:
+
+```
+vivado -mode batch -source synth/ooc_synth.tcl -tclargs netsvtack 6.4 $(find rtl -name '*.sv')
+```
+
 ## Getting started
 
 You need Verilator (I use 5.046), Python 3 and PyYAML.
@@ -107,7 +166,7 @@ The testbenches are written in C++ and run by the regression script
 ```
 make sanity      quick run of every suite
 make nightly     sanity, then each suite with more seeds and extra variants
-make top         a single suite (mac, common, tcp, top)
+make top         a single suite (mac, pcs, common, tcp, top, echo)
 make list        shows each suite and the command it runs
 make lint        lints all the RTL
 ```
