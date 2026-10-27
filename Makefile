@@ -20,6 +20,7 @@ RUN       := python3 tb/regressions/regress.py
 SUITES    := $(basename $(notdir $(filter-out %/sanity.yml %/nightly.yml,$(wildcard tb/regressions/*.yml))))
 
 RTL       := $(shell find rtl -name '*.sv' | sort)
+TOPS      := netsvtack_echo echo_meter pcs_tx pcs_rx
 
 VFLAGS    := -sv --timing --timescale 1ns/1ps --assert \
              -Wno-fatal -Wno-MULTITOP
@@ -29,7 +30,10 @@ VFLAGS    := -sv --timing --timescale 1ns/1ps --assert \
 all: lint sanity
 
 lint:
-	$(VERILATOR) --lint-only $(VFLAGS) $(RTL)
+	@for t in $(TOPS); do \
+		echo "lint $$t"; \
+		$(VERILATOR) --lint-only $(VFLAGS) --top-module $$t $(RTL) || exit 1; \
+	done
 	@echo "lint clean"
 
 test sanity:
