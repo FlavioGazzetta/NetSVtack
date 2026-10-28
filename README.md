@@ -43,6 +43,10 @@ Done and verified in simulation:
 - `netsvtack_echo`, the design that goes on the board: the stack with
   `udp_echo`, which sends every datagram back to where it came from, and the
   TCP stream looped back into itself.
+- `echo_meter`, for the second SFP+ cage: a second copy of the stack that
+  sends a 64 byte UDP probe every 210 us, counts the clocks from the start of
+  the probe going out to the start of its echo coming in, and prints the
+  minimum, maximum and average of every 4096 probes on the UART.
 
 In simulation a datagram's first word reaches the application 19 to 23 clocks
 after the start of its frame goes into the XGMII pins and its last word 12 to
@@ -53,13 +57,14 @@ ns), and any frame 19 to 21 clocks after its end. That is XGMII to XGMII: the
 PCS adds a clock each way and the transceiver its own delay, which only the
 board can give.
 
-The ZCU106 build (Vivado 2025.2) places and routes and writes a bitstream. All
-timing is met at 6.4 ns with 0.55 ns of slack on the transmit clock and 2.6 ns
-on the receive clock. The whole design is 7.9 k LUTs and 5.3 k flip-flops, 3%
-and 1% of the XCZU7EV, plus 13 block RAMs and one UltraRAM.
+The ZCU106 build (Vivado 2025.2) places and routes and writes a bitstream, with
+the stack on SFP0 and the meter on SFP1. All timing is met at 6.4 ns with
+0.56 ns of slack. The stack with its echo is 5.6 k LUTs and 4.7 k flip-flops,
+the whole design with the meter and both transceivers 11.9 k and 10.3 k, 5%
+and 2% of the XCZU7EV.
 
-Still to do: load it on the board, and measure the throughput and the round
-trip there and against the Linux kernel stack on the same link.
+Still to do: load it on the board, read the round trip off the meter, and
+measure the throughput and the same round trip against the Linux kernel stack.
 
 Known gaps:
 
@@ -86,6 +91,10 @@ Known gaps:
   and from other ZCU106 designs, not from a link that came up.
 - Nothing resets the receive side of the transceiver when the link goes away
   and comes back. If block lock does not return, press CPU_RESET.
+- The meter counts whole clocks, so a reading is good to 6.4 ns, and the
+  loopback reading it is compared with leaves out the SFP+ modules and the
+  cable. Its average is only right for a window with no lost probes. That it
+  ignores a stray frame arriving between a probe and its echo is not tested.
 
 ## Layout
 
@@ -99,7 +108,7 @@ rtl/ipv4/          ipv4_rx, ipv4_tx
 rtl/udp/           udp_rx, udp_tx
 rtl/icmp/          icmp
 rtl/tcp/           tcp_rx, tcp_ctrl, tcp_tx, tcp_rx_buf, tcp_tx_buf
-rtl/app/           udp_echo
+rtl/app/           udp_echo, echo_meter, uart_tx
 rtl/top/           netsvtack, netsvtack_echo
 
 fpga/zcu106/       board top level, transceiver wrapper, constraints, build.tcl
@@ -131,8 +140,10 @@ found again, has bit errors, and carries blocks that `pcs_tx` never sends
 (ordered sets, unknown types, bad headers). `cdc_link` in `common` runs
 `frame_cdc` with its two clocks up to 1000 ppm apart and checks that a frame
 comes out whole and without a gap. `echo` runs `netsvtack_echo` as the board
-would see it, and `top`, `tcp` and `echo` all take `:PPM=` to run the receive
-clock off the transmit clock.
+would see it, and `meter` wires `echo_meter` to it over a link whose delay
+changes, that goes down for a while and that delivers echoes late, and
+compares every report and every UART line with its own count. `top`, `tcp`
+and `echo` all take `:PPM=` to run the receive clock off the transmit clock.
 
 ## Building for the ZCU106
 
@@ -141,12 +152,44 @@ vivado -mode batch -source fpga/zcu106/build.tcl
 ```
 
 makes the transceiver IP, runs synthesis and place and route, and writes the
-reports and `netsvtack_zcu106.bit` to `fpga/zcu106/out/`. The board needs an
-SFP+ module or cable in cage SFP0 and the SI570 at its 156.25 MHz default. The
-design answers ARP and ping at 192.168.1.128 (MAC 02:00:00:00:00:01), echoes
-UDP on any port and TCP on port 5001. These are parameters of
-`netsvtack_echo`. LEDs 0 to 4: transceiver out of reset, block lock, TCP
-connected, a good frame came in, a bad frame came in.
+reports and `netsvtack_zcu106.bit` to `fpga/zcu106/out/`. The board needs the
+SI570 at its 156.25 MHz default.
+
+SFP0 is the stack. It answers ARP and ping at 192.168.1.128 (MAC
+02:00:00:00:00:01), echoes UDP on any port and TCP on port 5001. These are
+parameters of `netsvtack_echo`. SFP1 is the meter, at 192.168.1.129.
+
+| LED | on when |
+|---|---|
+| 0 | the stack's transceiver is out of reset |
+| 1 | the stack has block lock |
+| 2 | TCP connected |
+| 3 | a good frame came in |
+| 4 | a bad frame came in |
+| 5 | the meter has block lock |
+| 6 | flips with every report from the meter |
+| 7 | the last report had probes with no echo |
+
+### Measuring the round trip
+
+The meter's reports come out of the board's USB UART at 115200 baud, one line
+of four hex numbers each: minimum, maximum, average, probes lost. The first
+three are in clocks of 6.4 ns.
+
+1. Turn DIP switch 0 on. SFP1 now hears its own transmitter inside the
+   transceiver, and the reading is what the meter itself adds: its PCS and
+   transceiver out and back.
+2. Turn the switch off and cable SFP1 to SFP0. The reading is now the meter,
+   the cable twice and the stack.
+3. The difference is the stack's round trip at its pins, from the start of a
+   64 byte frame going in to the start of the echo coming out, plus the cable
+   and the modules.
+
+```
+stty -F /dev/ttyUSB1 115200 raw
+python3 fpga/zcu106/meter.py /dev/ttyUSB1              # step 1, note the average in clocks
+python3 fpga/zcu106/meter.py /dev/ttyUSB1 --loop 21    # step 2, with that number taken off
+```
 
 For timing and area of one block on its own:
 
