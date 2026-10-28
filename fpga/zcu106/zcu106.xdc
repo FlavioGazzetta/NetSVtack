@@ -1,4 +1,4 @@
-# ZCU106, xczu7ev-ffvc1156-2-e, SFP0
+# ZCU106, xczu7ev-ffvc1156-2-e, SFP0 and SFP1
 
 set_property -dict {PACKAGE_PIN H9 IOSTANDARD LVDS} [get_ports clk_125_p]
 set_property -dict {PACKAGE_PIN G9 IOSTANDARD LVDS} [get_ports clk_125_n]
@@ -6,6 +6,12 @@ create_clock -period 8.000 -name clk_125 [get_ports clk_125_p]
 
 set_property -dict {PACKAGE_PIN G13 IOSTANDARD LVCMOS18} [get_ports cpu_reset]
 set_false_path -from [get_ports cpu_reset]
+
+set_property -dict {PACKAGE_PIN A17 IOSTANDARD LVCMOS18} [get_ports sw_loopback]
+set_false_path -from [get_ports sw_loopback]
+
+set_property -dict {PACKAGE_PIN AL17 IOSTANDARD LVCMOS12 SLEW SLOW DRIVE 8} [get_ports uart_txd]
+set_false_path -to [get_ports uart_txd]
 
 # 156.25 MHz, MGTREFCLK1 of quad 226, the SI570 at its power-on frequency
 set_property PACKAGE_PIN U10 [get_ports sfp_refclk_p]
@@ -19,6 +25,14 @@ set_property PACKAGE_PIN Y4 [get_ports sfp0_tx_p]
 set_property PACKAGE_PIN Y3 [get_ports sfp0_tx_n]
 set_property -dict {PACKAGE_PIN AE22 IOSTANDARD LVCMOS12 SLEW SLOW DRIVE 8} [get_ports sfp0_tx_disable_b]
 set_false_path -to [get_ports sfp0_tx_disable_b]
+
+# SFP1 is GTHE4_CHANNEL_X0Y11
+set_property PACKAGE_PIN W2 [get_ports sfp1_rx_p]
+set_property PACKAGE_PIN W1 [get_ports sfp1_rx_n]
+set_property PACKAGE_PIN W6 [get_ports sfp1_tx_p]
+set_property PACKAGE_PIN W5 [get_ports sfp1_tx_n]
+set_property -dict {PACKAGE_PIN AF20 IOSTANDARD LVCMOS12 SLEW SLOW DRIVE 8} [get_ports sfp1_tx_disable_b]
+set_false_path -to [get_ports sfp1_tx_disable_b]
 
 set_property -dict {PACKAGE_PIN AL11 IOSTANDARD LVCMOS12 SLEW SLOW DRIVE 8} [get_ports {led[0]}]
 set_property -dict {PACKAGE_PIN AL13 IOSTANDARD LVCMOS12 SLEW SLOW DRIVE 8} [get_ports {led[1]}]

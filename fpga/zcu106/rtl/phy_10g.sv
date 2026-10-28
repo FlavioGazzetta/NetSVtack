@@ -1,8 +1,18 @@
-module phy_10g (
+module phy_10g #(
+  parameter bit COMMON = 1'b1 // 1 -> has the quad's PLL in it, 0 -> takes it from the one that has
+)(
 
   input logic clk_free, // 125 MHz, runs the transceiver's reset sequence
   input logic rst_free,
-  input logic refclk, // 156.25 MHz
+  input logic refclk, // 156.25 MHz, COMMON only
+  input logic loopback, // the transmitter straight into the receiver inside the transceiver, not with COMMON
+
+  output logic qpll_lock, // COMMON only
+  output logic qpll_clk,
+  output logic qpll_refclk,
+  input logic qpll_lock_in, // not with COMMON
+  input logic qpll_clk_in,
+  input logic qpll_refclk_in,
 
   input logic rx_p,
   input logic rx_n,
@@ -87,47 +97,105 @@ module phy_10g (
     .block_lock(block_lock)
   );
 
-  gth_10g u_gth ( // gtwizard_ultrascale, made by build.tcl
-    .gtwiz_userclk_tx_reset_in(1'b0),
-    .gtwiz_userclk_tx_srcclk_out(),
-    .gtwiz_userclk_tx_usrclk_out(),
-    .gtwiz_userclk_tx_usrclk2_out(tx_clk),
-    .gtwiz_userclk_tx_active_out(),
-    .gtwiz_userclk_rx_reset_in(1'b0),
-    .gtwiz_userclk_rx_srcclk_out(),
-    .gtwiz_userclk_rx_usrclk_out(),
-    .gtwiz_userclk_rx_usrclk2_out(rx_clk),
-    .gtwiz_userclk_rx_active_out(),
-    .gtwiz_reset_clk_freerun_in(clk_free),
-    .gtwiz_reset_all_in(rst_free),
-    .gtwiz_reset_tx_pll_and_datapath_in(1'b0),
-    .gtwiz_reset_tx_datapath_in(1'b0),
-    .gtwiz_reset_rx_pll_and_datapath_in(1'b0),
-    .gtwiz_reset_rx_datapath_in(1'b0),
-    .gtwiz_reset_rx_cdr_stable_out(),
-    .gtwiz_reset_tx_done_out(tx_done),
-    .gtwiz_reset_rx_done_out(rx_done),
-    .gtwiz_userdata_tx_in(gt_txdata),
-    .gtwiz_userdata_rx_out(gt_rxdata),
-    .gtrefclk00_in(refclk),
-    .qpll0outclk_out(),
-    .qpll0outrefclk_out(),
-    .gthrxn_in(rx_n),
-    .gthrxp_in(rx_p),
-    .rxgearboxslip_in(rx_slip),
-    .txheader_in(gt_txheader),
-    .txsequence_in(7'd0),
-    .gthtxn_out(tx_n),
-    .gthtxp_out(tx_p),
-    .gtpowergood_out(),
-    .rxdatavalid_out(gt_rxdatavalid),
-    .rxheader_out(gt_rxheader),
-    .rxheadervalid_out(gt_rxheadervalid),
-    .rxpmaresetdone_out(),
-    .rxprgdivresetdone_out(),
-    .rxstartofseq_out(),
-    .txpmaresetdone_out(),
-    .txprgdivresetdone_out()
-  );
+  if (COMMON) begin : g_gth
+
+    gth_10g u_gth ( // gtwizard_ultrascale, made by build.tcl
+      .gtwiz_userclk_tx_reset_in(1'b0),
+      .gtwiz_userclk_tx_srcclk_out(),
+      .gtwiz_userclk_tx_usrclk_out(),
+      .gtwiz_userclk_tx_usrclk2_out(tx_clk),
+      .gtwiz_userclk_tx_active_out(),
+      .gtwiz_userclk_rx_reset_in(1'b0),
+      .gtwiz_userclk_rx_srcclk_out(),
+      .gtwiz_userclk_rx_usrclk_out(),
+      .gtwiz_userclk_rx_usrclk2_out(rx_clk),
+      .gtwiz_userclk_rx_active_out(),
+      .gtwiz_reset_clk_freerun_in(clk_free),
+      .gtwiz_reset_all_in(rst_free),
+      .gtwiz_reset_tx_pll_and_datapath_in(1'b0),
+      .gtwiz_reset_tx_datapath_in(1'b0),
+      .gtwiz_reset_rx_pll_and_datapath_in(1'b0),
+      .gtwiz_reset_rx_datapath_in(1'b0),
+      .gtwiz_reset_rx_cdr_stable_out(),
+      .gtwiz_reset_tx_done_out(tx_done),
+      .gtwiz_reset_rx_done_out(rx_done),
+      .gtwiz_userdata_tx_in(gt_txdata),
+      .gtwiz_userdata_rx_out(gt_rxdata),
+      .gtrefclk00_in(refclk),
+      .qpll0lock_out(qpll_lock),
+      .qpll0outclk_out(qpll_clk),
+      .qpll0outrefclk_out(qpll_refclk),
+      .gthrxn_in(rx_n),
+      .gthrxp_in(rx_p),
+      .rxgearboxslip_in(rx_slip),
+      .txheader_in(gt_txheader),
+      .txsequence_in(7'd0),
+      .gthtxn_out(tx_n),
+      .gthtxp_out(tx_p),
+      .gtpowergood_out(),
+      .rxdatavalid_out(gt_rxdatavalid),
+      .rxheader_out(gt_rxheader),
+      .rxheadervalid_out(gt_rxheadervalid),
+      .rxpmaresetdone_out(),
+      .rxprgdivresetdone_out(),
+      .rxstartofseq_out(),
+      .txpmaresetdone_out(),
+      .txprgdivresetdone_out()
+    );
+
+  end else begin : g_gth
+
+    gth_10g_ch u_gth (
+      .gtwiz_userclk_tx_reset_in(1'b0),
+      .gtwiz_userclk_tx_srcclk_out(),
+      .gtwiz_userclk_tx_usrclk_out(),
+      .gtwiz_userclk_tx_usrclk2_out(tx_clk),
+      .gtwiz_userclk_tx_active_out(),
+      .gtwiz_userclk_rx_reset_in(1'b0),
+      .gtwiz_userclk_rx_srcclk_out(),
+      .gtwiz_userclk_rx_usrclk_out(),
+      .gtwiz_userclk_rx_usrclk2_out(rx_clk),
+      .gtwiz_userclk_rx_active_out(),
+      .gtwiz_reset_clk_freerun_in(clk_free),
+      .gtwiz_reset_all_in(rst_free),
+      .gtwiz_reset_tx_pll_and_datapath_in(1'b0),
+      .gtwiz_reset_tx_datapath_in(1'b0),
+      .gtwiz_reset_rx_pll_and_datapath_in(1'b0),
+      .gtwiz_reset_rx_datapath_in(1'b0),
+      .gtwiz_reset_rx_cdr_stable_out(),
+      .gtwiz_reset_tx_done_out(tx_done),
+      .gtwiz_reset_rx_done_out(rx_done),
+      .gtwiz_userdata_tx_in(gt_txdata),
+      .gtwiz_userdata_rx_out(gt_rxdata),
+      .gtwiz_reset_qpll0lock_in(qpll_lock_in),
+      .gtwiz_reset_qpll0reset_out(),
+      .loopback_in(loopback ? 3'b010 : 3'b000),
+      .qpll0clk_in(qpll_clk_in),
+      .qpll0refclk_in(qpll_refclk_in),
+      .qpll1clk_in(1'b0),
+      .qpll1refclk_in(1'b0),
+      .gthrxn_in(rx_n),
+      .gthrxp_in(rx_p),
+      .rxgearboxslip_in(rx_slip),
+      .txheader_in(gt_txheader),
+      .txsequence_in(7'd0),
+      .gthtxn_out(tx_n),
+      .gthtxp_out(tx_p),
+      .gtpowergood_out(),
+      .rxdatavalid_out(gt_rxdatavalid),
+      .rxheader_out(gt_rxheader),
+      .rxheadervalid_out(gt_rxheadervalid),
+      .rxpmaresetdone_out(),
+      .rxprgdivresetdone_out(),
+      .rxstartofseq_out(),
+      .txpmaresetdone_out(),
+      .txprgdivresetdone_out()
+    );
+
+    assign qpll_lock = 1'b0;
+    assign qpll_clk = 1'b0;
+    assign qpll_refclk = 1'b0;
+
+  end
 
 endmodule
